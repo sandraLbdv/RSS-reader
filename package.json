@@ -4,6 +4,7 @@
   "description": "RSS reader",
   "main": "index.js",
   "scripts": {
+    "build": "webpack",
     "test": "jest"
   },
   "repository": {
@@ -21,18 +22,32 @@
     "@babel/core": "^7.11.5",
     "@babel/node": "^7.10.5",
     "@babel/preset-env": "^7.11.5",
+    "autoprefixer": "^9.8.6",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "^10.1.0",
     "babel-jest": "^26.3.0",
+    "css-loader": "^4.2.2",
     "eslint": "^7.8.1",
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-plugin-babel": "^5.3.1",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-jest": "^23.20.0",
+    "html-webpack-plugin": "^4.4.1",
     "jest": "^26.4.2",
-    "jest-cli": "^26.4.2"
+    "jest-cli": "^26.4.2",
+    "node-sass": "^4.14.1",
+    "postcss-loader": "^3.0.0",
+    "sass-loader": "^10.0.1",
+    "style-loader": "^1.2.1",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
   },
   "babel-node": "babel-node",
   "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
-  "prepublishOnly": "npm run build"
+  "prepublishOnly": "npm run build",
+  "dependencies": {
+    "bootstrap": "^4.5.2",
+    "jquery": "^3.5.1",
+    "popper.js": "^1.16.1"
+  }
 }
