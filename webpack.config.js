@@ -4,43 +4,39 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
   entry: './src/index.js',
   output: {
-    filename: 'bundle.js',
+    filename: 'index_bundle.js',
     path: path.resolve(__dirname, 'dist'),
   },
   plugins: [
-    new HtmlWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      template: './src/index.html',
+    }),
   ],
+  devServer: {
+    contentBase: './dist',
+  },
 
   module: {
     rules: [
       {
         test: /\.(scss)$/,
         use: [
+          { loader: 'style-loader' },
+          { loader: 'css-loader' },
           {
-            // Adds CSS to the DOM by injecting a `<style>` tag
-            loader: 'style-loader'
-          },
-          {
-            // Interprets `@import` and `url()` like `import/require()` and will resolve them
-            loader: 'css-loader'
-          },
-          {
-            // Loader for webpack to process CSS with PostCSS
-            loader: 'postcss-loader',
+            loader: 'postcss-loader', 
             options: {
               plugins: function () {
                 return [
                   require('autoprefixer')
                 ];
               }
-            }
+            },
           },
-          {
-            // Loads a SASS/SCSS file and compiles it to CSS
-            loader: 'sass-loader'
-          }
-        ]
-      }
-    ]
-  }
+          { loader: 'sass-loader' },
+        ],
+      },
+      { test: /\.(js)$/, use: 'babel-loader' },
+    ],
+  },
 };
