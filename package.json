@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "webpack",
-    "test": "jest"
+    "test": "jest",
+    "server": "webpack-dev-server --open"
   },
   "repository": {
     "type": "git",
@@ -41,14 +42,18 @@
     "sass-loader": "^10.0.1",
     "style-loader": "^1.2.1",
     "webpack": "^4.44.1",
-    "webpack-cli": "^3.3.12"
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
   },
   "babel-node": "babel-node",
   "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
   "prepublishOnly": "npm run build",
   "dependencies": {
+    "axios": "^0.20.0",
     "bootstrap": "^4.5.2",
     "jquery": "^3.5.1",
-    "popper.js": "^1.16.1"
+    "on-change": "^2.1.2",
+    "popper.js": "^1.16.1",
+    "yup": "^0.29.3"
   }
 }

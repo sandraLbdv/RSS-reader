@@ -1,2 +1,3 @@
-import 'bootstrap';
-import './scss/app.scss';
+import runApp from './init.js';
+
+runApp();
