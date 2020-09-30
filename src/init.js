@@ -6,7 +6,8 @@ import axios from 'axios';
 import i18next from 'i18next';
 import _ from 'lodash';
 
-import watch from './watchers.js';
+import resources from './locales';
+import watch from './watchers';
 
 const parse = (data) => {
   const parser = new DOMParser();
@@ -17,7 +18,7 @@ const parse = (data) => {
   return { title, items };
 };
 
-export default (() => {
+export default () => {
   const elements = {
     form: document.querySelector('.rss-form'),
     input: document.querySelector('input'),
@@ -42,61 +43,53 @@ export default (() => {
 
   const schema = yup.string().url().required();
 
-  // elements.form.addEventListener('input', (event) => {
-  //   schema.validate(event.target.value)
-  //     .then(() => {
-  //       console.log('valid!');
-  //       watchedState.form.valid = true;
-  //     })
-  //     .catch((err) => {
-  //       console.log(err);
-  //       console.log('INvalid!');
+  i18next.init({
+    lng: 'en',
+    debug: true,
+    resources,
+  })
+    .then(() => {
+      elements.form.addEventListener('submit', (event) => {
+        event.preventDefault();
 
-  //       watchedState.form.valid = false;
-  //     });
-  // });
+        const formData = new FormData(event.target);
+        const rssUrl = formData.get('rssUrl');
 
-  elements.form.addEventListener('submit', (event) => {
-    event.preventDefault();
+        schema.validate(rssUrl)
+          .then(() => {
+            watchedState.form.valid = true;
 
-    const formData = new FormData(event.target);
-    const rssUrl = formData.get('rssUrl');
+            const corsUrl = 'https://cors-anywhere.herokuapp.com/';
+            const fullUrl = `${corsUrl}${rssUrl}`;
 
-    schema.validate(rssUrl)
-      .then(() => {
-        console.log('valid!');
-        watchedState.form.valid = true;
+            axios.get(fullUrl)
+              .then((response) => {
+                const { title, items } = parse(response.data);
 
-        const corsUrl = 'https://cors-anywhere.herokuapp.com/';
-        const fullUrl = `${corsUrl}${rssUrl}`;
+                const sourcesFiltered = unwatchedState.sources
+                  .filter((source) => source.title === title);
 
-        axios.get(fullUrl)
-          .then((response) => {
-            const { title, items } = parse(response.data);
+                if (sourcesFiltered.length !== 0) {
+                  watchedState.form.status = 'doubleAdded';
+                  return;
+                }
 
-            const sourcesFiltered = unwatchedState.sources
-              .filter((source) => source.title === title);
+                watchedState.form.status = 'sending';
 
-            if (sourcesFiltered.length !== 0) {
-              watchedState.form.status = 'doubleAdded';
-              return;
-            }
-
-            watchedState.form.status = 'sending';
-
-            const id = _.uniqueId();
-            watchedState.sources.push({ id, title });
-            watchedState.feeds.push({ id, title, items });
-            watchedState.form.status = 'submitted';
+                const id = _.uniqueId();
+                watchedState.sources.push({ id, title });
+                watchedState.feeds.push({ id, title, items });
+                watchedState.form.status = 'submitted';
+              })
+              .catch((error) => {
+                console.log(error);
+                watchedState.form.status = 'failed';
+              });
           })
-          .catch((error) => {
-            console.log(error);
-            watchedState.form.status = 'failed';
+          .catch((err) => {
+            console.log(err);
+            watchedState.form.valid = false;
           });
-      })
-      .catch((err) => {
-        console.log(err);
-        watchedState.form.valid = false;
       });
-  });
-});
+    });
+};

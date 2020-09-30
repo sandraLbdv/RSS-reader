@@ -1,4 +1,5 @@
 import onChange from 'on-change';
+import i18next from 'i18next';
 
 const getPosts = (feeds) => {
   const html = feeds.map((feed) => {
@@ -24,30 +25,28 @@ export default (elements, state) => {
         if (value === false) {
           input.classList.remove('is-valid');
           input.classList.add('is-invalid');
-          feedback.textContent = 'Please enter a valid URL';
-          sendButton.disabled = true;
+          feedback.textContent = i18next.t('validation.invalid');
         }
         if (value === true) {
           input.classList.remove('is-invalid');
           input.classList.add('is-valid');
           feedback.textContent = '';
-          sendButton.disabled = false;
         }
         break;
       case 'form.status':
         if (value === 'doubleAdded') {
-          feedback.textContent = 'This RSS has already been added';
+          feedback.textContent = i18next.t('status.doubleAdded');
         }
         if (value === 'submitted') {
-          feedback.textContent = '';
+          feedback.textContent = i18next.t('status.submitted');
           input.value = '';
           sendButton.disabled = false;
         }
         if (value === 'failed') {
-          feedback.textContent = 'Connection problems. Try again';
+          feedback.textContent = i18next.t('status.failed');
         }
         if (value === 'sending') {
-          feedback.textContent = 'Sending...';
+          feedback.textContent = i18next.t('status.sending');
           sendButton.disabled = true;
         }
         break;
