@@ -19,9 +19,7 @@
   },
   "homepage": "https://github.com/sandraLbdv/frontend-project-lvl3#readme",
   "devDependencies": {
-    "@babel/cli": "^7.11.6",
     "@babel/core": "^7.11.6",
-    "@babel/node": "^7.10.5",
     "@babel/preset-env": "^7.11.5",
     "autoprefixer": "^9.8.6",
     "babel-loader": "^8.1.0",
