@@ -90,7 +90,7 @@ export default (elements, state) => {
         feedsContainer.innerHTML = renderFeeds(value, unwatchedState);
         break;
       default:
-        break;
+        throw new Error(`Unknown state path: '${path}'!`);
     }
   });
 

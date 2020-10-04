@@ -36,9 +36,9 @@ const getFullUrl = (rssUrl) => {
 };
 
 const isDoubleAdded = (sources, title) => {
-  const sourcesFiltered = sources.filter((source) => source.title === title);
+  const sameTitleSources = sources.filter((source) => source.title === title);
 
-  if (sourcesFiltered.length !== 0) {
+  if (sameTitleSources.length !== 0) {
     return true;
   }
   return false;
@@ -67,9 +67,9 @@ const updatePosts = (state) => {
         const { posts: newPosts } = parse(response.data);
         const oldPosts = posts.filter((post) => post.id === id);
 
-        const diffPosts = getPostsDiff(oldPosts, newPosts);
-        if (diffPosts.length !== 0) {
-          const diffPostsWithId = [...diffPosts].map((post) => ({ id, post }));
+        const diff = getPostsDiff(oldPosts, newPosts);
+        if (diff.length !== 0) {
+          const diffPostsWithId = [...diff].map((post) => ({ id, post }));
           watchedState.posts = [...diffPostsWithId, ...unwatchedState.posts];
         }
       })
