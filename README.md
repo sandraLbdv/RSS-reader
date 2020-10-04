@@ -3,3 +3,4 @@
 ![Node](https://github.com/sandraLbdv/frontend-project-lvl3/workflows/Node/badge.svg)
 
 https://frontend-project-lvl3-bay.vercel.app/
+<a target="_blank" href="https://frontend-project-lvl3-bay.vercel.app/"></a>
