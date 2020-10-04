@@ -89,6 +89,8 @@ export default (elements, state) => {
       case 'posts':
         feedsContainer.innerHTML = renderFeeds(value, unwatchedState);
         break;
+      case 'sources':
+        break;
       default:
         throw new Error(`Unknown state path: '${path}'!`);
     }
