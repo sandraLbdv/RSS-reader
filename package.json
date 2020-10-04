@@ -19,15 +19,7 @@
   },
   "homepage": "https://github.com/sandraLbdv/frontend-project-lvl3#readme",
   "devDependencies": {
-    "@babel/cli": "^7.11.5",
-    "@babel/core": "^7.11.5",
-    "@babel/node": "^7.10.5",
-    "@babel/preset-env": "^7.11.5",
     "autoprefixer": "^9.8.6",
-    "babel-core": "^7.0.0-bridge.0",
-    "babel-eslint": "^10.1.0",
-    "babel-jest": "^26.3.0",
-    "babel-loader": "^8.1.0",
     "css-loader": "^4.2.2",
     "eslint": "^7.8.1",
     "eslint-config-airbnb-base": "^14.2.0",
@@ -45,7 +37,6 @@
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"
   },
-  "babel-node": "babel-node",
   "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
   "prepublishOnly": "npm run build",
   "dependencies": {
@@ -53,7 +44,7 @@
     "bootstrap": "^4.5.2",
     "i18next": "^19.7.0",
     "jquery": "^3.5.1",
-    "lodash": "^4.17.20",
+    "lodash.uniqueid": "^4.0.1",
     "on-change": "^2.1.2",
     "popper.js": "^1.16.1",
     "yup": "^0.29.3"

@@ -4,39 +4,91 @@ import './scss/app.scss';
 import * as yup from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
-import _ from 'lodash';
+import uniqueId from 'lodash.uniqueid';
 
 import resources from './locales';
 import watch from './watchers';
 
+const getPostsDiff = (oldPosts, newPosts) => {
+  const oldPostsLinks = [...oldPosts].map(({ post }) => post.querySelector('link').textContent);
+  const diff = [...newPosts].filter((post) => {
+    const postLink = post.querySelector('link').textContent;
+    if (oldPostsLinks.includes(postLink)) {
+      return false;
+    }
+    return true;
+  });
+
+  return diff;
+};
+
+const elements = {
+  form: document.querySelector('.rss-form'),
+  input: document.querySelector('input'),
+  feedback: document.querySelector('.feedback'),
+  sendButton: document.querySelector('button'),
+  feedsContainer: document.querySelector('.feeds'),
+};
+
+const getFullUrl = (rssUrl) => {
+  const corsUrl = 'https://cors-anywhere.herokuapp.com/';
+  return `${corsUrl}${rssUrl}`;
+};
+
+const isDoubleAdded = (sources, title) => {
+  const sourcesFiltered = sources.filter((source) => source.title === title);
+
+  if (sourcesFiltered.length !== 0) {
+    return true;
+  }
+  return false;
+};
+
 const parse = (data) => {
   const parser = new DOMParser();
-  const dataParsed = parser.parseFromString(data, 'application/xml');
+  const dataParsed = parser.parseFromString(data, 'text/xml');
   const title = dataParsed.querySelector('title').textContent;
-  const items = dataParsed.querySelectorAll('item');
+  const posts = dataParsed.querySelectorAll('item');
 
-  return { title, items };
+  return { title, posts };
+};
+
+const updatePosts = (state) => {
+  const { watchedState, unwatchedState } = watch(elements, state);
+
+  const { sources, posts } = unwatchedState;
+
+  sources.forEach((source) => {
+    const { id, rssUrl } = source;
+    const fullUrl = getFullUrl(rssUrl);
+
+    axios.get(fullUrl)
+      .then((response) => {
+        const { posts: newPosts } = parse(response.data);
+        const oldPosts = posts.filter((post) => post.id === id);
+
+        const diffPosts = getPostsDiff(oldPosts, newPosts);
+        if (diffPosts.length !== 0) {
+          const diffPostsWithId = [...diffPosts].map((post) => ({ id, post }));
+          watchedState.posts = [...diffPostsWithId, ...unwatchedState.posts];
+        }
+      })
+      .catch(() => {
+        watchedState.form.status = 'failed';
+      });
+  });
+
+  setTimeout(() => updatePosts(state), 5000);
 };
 
 export default () => {
-  const elements = {
-    form: document.querySelector('.rss-form'),
-    input: document.querySelector('input'),
-    feedback: document.querySelector('.feedback'),
-    sendButton: document.querySelector('button'),
-    feedsContainer: document.querySelector('.feeds'),
-  };
-
   const state = {
     sources: [],
-    feeds: [],
+    posts: [],
     form: {
       status: 'filling',
-      error: null,
       valid: true,
-      value: '',
     },
-    errors: {},
   };
 
   const { watchedState, unwatchedState } = watch(elements, state);
@@ -59,37 +111,35 @@ export default () => {
           .then(() => {
             watchedState.form.valid = true;
 
-            const corsUrl = 'https://cors-anywhere.herokuapp.com/';
-            const fullUrl = `${corsUrl}${rssUrl}`;
+            const fullUrl = getFullUrl(rssUrl);
 
             axios.get(fullUrl)
               .then((response) => {
-                const { title, items } = parse(response.data);
+                const { title, posts } = parse(response.data);
 
-                const sourcesFiltered = unwatchedState.sources
-                  .filter((source) => source.title === title);
-
-                if (sourcesFiltered.length !== 0) {
+                if (isDoubleAdded(unwatchedState.sources, title)) {
                   watchedState.form.status = 'doubleAdded';
                   return;
                 }
 
                 watchedState.form.status = 'sending';
 
-                const id = _.uniqueId();
-                watchedState.sources.push({ id, title });
-                watchedState.feeds.push({ id, title, items });
+                const id = uniqueId('rss_');
+                watchedState.sources.push({ id, title, rssUrl });
+
+                const postsWithId = [...posts].map((post) => ({ id, post }));
+                watchedState.posts = [...unwatchedState.posts, ...postsWithId];
+
                 watchedState.form.status = 'submitted';
               })
-              .catch((error) => {
-                console.log(error);
+              .catch(() => {
                 watchedState.form.status = 'failed';
               });
           })
-          .catch((err) => {
-            console.log(err);
+          .catch(() => {
             watchedState.form.valid = false;
           });
       });
+      setTimeout(() => updatePosts(state), 5000);
     });
 };

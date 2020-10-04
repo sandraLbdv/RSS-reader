@@ -1,17 +1,43 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 
-const getPosts = (feeds) => {
-  const html = feeds.map((feed) => {
-    const title = `<h2>${feed.title}</h2>`;
-    const posts = [...feed.items].map((item) => {
-      const itemLink = item.querySelector('link').textContent;
-      const itemTitle = item.querySelector('title').textContent;
-      return `<div><a href="${itemLink}">${itemTitle}</a></div>`;
-    }).join('\n');
-    return [title, posts].join('\n');
+const renderFeeds = (posts, unwatchedState) => {
+  const { sources } = unwatchedState;
+
+  const html = sources.map(({ id, title }) => {
+    const feedTitle = `<h2>${title}</h2>`;
+
+    const feedPosts = posts
+      .filter((post) => post.id === id)
+      .map(({ post }) => {
+        const postLink = post.querySelector('link').textContent;
+        const postTitle = post.querySelector('title').textContent;
+        return `<div><a target="_blank" href="${postLink}">${postTitle}</a></div>`;
+      })
+      .join('\n');
+
+    return [feedTitle, feedPosts].join('\n');
   }).join('\n');
+
   return html;
+};
+
+const updateFeedbackClassList = (feedbackContainer, feedbackStatus) => {
+  switch (feedbackStatus) {
+    case 'danger':
+      feedbackContainer.classList.add('text-danger');
+      feedbackContainer.classList.remove('text-success');
+      break;
+    case 'success':
+      feedbackContainer.classList.add('text-success');
+      feedbackContainer.classList.remove('text-danger');
+      break;
+    case 'neutral':
+      feedbackContainer.classList.remove('text-success', 'text-danger');
+      break;
+    default:
+      break;
+  }
 };
 
 export default (elements, state) => {
@@ -19,13 +45,17 @@ export default (elements, state) => {
     input, feedback, sendButton, feedsContainer,
   } = elements;
 
+  const unwatchedState = onChange.target(state);
+
   const watchedState = onChange(state, (path, value) => {
     switch (path) {
       case 'form.valid':
         if (value === false) {
           input.classList.remove('is-valid');
           input.classList.add('is-invalid');
+
           feedback.textContent = i18next.t('validation.invalid');
+          updateFeedbackClassList(feedback, 'neutral');
         }
         if (value === true) {
           input.classList.remove('is-invalid');
@@ -36,29 +66,33 @@ export default (elements, state) => {
       case 'form.status':
         if (value === 'doubleAdded') {
           feedback.textContent = i18next.t('status.doubleAdded');
+          updateFeedbackClassList(feedback, 'danger');
         }
         if (value === 'submitted') {
           feedback.textContent = i18next.t('status.submitted');
+          updateFeedbackClassList(feedback, 'success');
+
           input.value = '';
           sendButton.disabled = false;
         }
         if (value === 'failed') {
           feedback.textContent = i18next.t('status.failed');
+          updateFeedbackClassList(feedback, 'danger');
         }
         if (value === 'sending') {
           feedback.textContent = i18next.t('status.sending');
+          updateFeedbackClassList(feedback, 'neutral');
+
           sendButton.disabled = true;
         }
         break;
-      case 'feeds':
-        feedsContainer.innerHTML = getPosts(value);
+      case 'posts':
+        feedsContainer.innerHTML = renderFeeds(value, unwatchedState);
         break;
       default:
         break;
     }
   });
-
-  const unwatchedState = onChange.target(state);
 
   return { watchedState, unwatchedState };
 };
