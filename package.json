@@ -41,6 +41,7 @@
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"
   },
+  "babel-node": "babel-node",
   "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
   "prepublishOnly": "npm run build",
   "dependencies": {
