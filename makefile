@@ -6,3 +6,9 @@ publish:
 
 lint:
 	npx eslint .
+
+build:
+	npx webpack
+
+develop:
+	npx webpack-dev-server --open
