@@ -3,6 +3,7 @@ export default {
     status: {
       doubleAdded: 'This RSS has already been added',
       failed: 'Connection problems. Try again',
+      updateFailed: 'Connection problems. Update failed',
       sending: 'Sending...',
       submitted: 'Rss has been loaded',
     },

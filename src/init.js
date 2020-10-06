@@ -5,22 +5,11 @@ import * as yup from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
 import uniqueId from 'lodash.uniqueid';
+import differenceBy from 'lodash.differenceby';
 
 import resources from './locales';
 import watch from './watchers';
-
-const getPostsDiff = (oldPosts, newPosts) => {
-  const oldPostsLinks = [...oldPosts].map(({ post }) => post.querySelector('link').textContent);
-  const diff = [...newPosts].filter((post) => {
-    const postLink = post.querySelector('link').textContent;
-    if (oldPostsLinks.includes(postLink)) {
-      return false;
-    }
-    return true;
-  });
-
-  return diff;
-};
+import parse from './parse';
 
 const elements = {
   form: document.querySelector('.rss-form'),
@@ -35,22 +24,13 @@ const getFullUrl = (rssUrl) => {
   return `${corsUrl}${rssUrl}`;
 };
 
-const isDoubleAdded = (sources, title) => {
-  const sameTitleSources = sources.filter((source) => source.title === title);
+const isDoubleAdded = (sources, rssUrl) => {
+  const sameUrlSources = sources.filter((source) => source.rssUrl === rssUrl);
 
-  if (sameTitleSources.length !== 0) {
+  if (sameUrlSources.length !== 0) {
     return true;
   }
   return false;
-};
-
-const parse = (data) => {
-  const parser = new DOMParser();
-  const dataParsed = parser.parseFromString(data, 'text/xml');
-  const title = dataParsed.querySelector('title').textContent;
-  const posts = dataParsed.querySelectorAll('item');
-
-  return { title, posts };
 };
 
 const updatePosts = (state) => {
@@ -58,27 +38,30 @@ const updatePosts = (state) => {
 
   const { sources, posts } = unwatchedState;
 
-  sources.forEach((source) => {
+  const requests = sources.map((source) => {
     const { id, rssUrl } = source;
     const fullUrl = getFullUrl(rssUrl);
 
-    axios.get(fullUrl)
+    return axios.get(fullUrl)
       .then((response) => {
         const { posts: newPosts } = parse(response.data);
         const oldPosts = posts.filter((post) => post.id === id);
 
-        const diff = getPostsDiff(oldPosts, newPosts);
+        const diff = differenceBy(newPosts, oldPosts, 'postLink');
         if (diff.length !== 0) {
-          const diffPostsWithId = [...diff].map((post) => ({ id, post }));
+          const diffPostsWithId = [...diff].map((post) => ({ id, ...post }));
           watchedState.posts = [...diffPostsWithId, ...unwatchedState.posts];
         }
-      })
-      .catch(() => {
-        watchedState.form.status = 'failed';
       });
   });
 
-  setTimeout(() => updatePosts(state), 5000);
+  Promise.all(requests)
+    .catch(() => {
+      watchedState.form.status = 'updateFailed';
+    })
+    .then(() => {
+      setTimeout(() => updatePosts(state), 5000);
+    });
 };
 
 export default () => {
@@ -109,6 +92,12 @@ export default () => {
 
         schema.validate(rssUrl)
           .then(() => {
+            if (isDoubleAdded(unwatchedState.sources, rssUrl)) {
+              watchedState.form.status = 'doubleAdded';
+              return;
+            }
+
+            watchedState.form.status = 'sending';
             watchedState.form.valid = true;
 
             const fullUrl = getFullUrl(rssUrl);
@@ -117,17 +106,10 @@ export default () => {
               .then((response) => {
                 const { title, posts } = parse(response.data);
 
-                if (isDoubleAdded(unwatchedState.sources, title)) {
-                  watchedState.form.status = 'doubleAdded';
-                  return;
-                }
-
-                watchedState.form.status = 'sending';
-
                 const id = uniqueId('rss_');
                 watchedState.sources.push({ id, title, rssUrl });
 
-                const postsWithId = [...posts].map((post) => ({ id, post }));
+                const postsWithId = [...posts].map((post) => ({ id, ...post }));
                 watchedState.posts = [...unwatchedState.posts, ...postsWithId];
 
                 watchedState.form.status = 'submitted';

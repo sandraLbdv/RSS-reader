@@ -9,11 +9,7 @@ const renderFeeds = (posts, unwatchedState) => {
 
     const feedPosts = posts
       .filter((post) => post.id === id)
-      .map(({ post }) => {
-        const postLink = post.querySelector('link').textContent;
-        const postTitle = post.querySelector('title').textContent;
-        return `<div><a target="_blank" href="${postLink}">${postTitle}</a></div>`;
-      })
+      .map(({ postLink, postTitle }) => `<div><a target="_blank" href="${postLink}">${postTitle}</a></div>`)
       .join('\n');
 
     return [feedTitle, feedPosts].join('\n');
@@ -67,6 +63,8 @@ export default (elements, state) => {
         if (value === 'doubleAdded') {
           feedback.textContent = i18next.t('status.doubleAdded');
           updateFeedbackClassList(feedback, 'danger');
+
+          sendButton.disabled = false;
         }
         if (value === 'submitted') {
           feedback.textContent = i18next.t('status.submitted');
@@ -78,12 +76,17 @@ export default (elements, state) => {
         if (value === 'failed') {
           feedback.textContent = i18next.t('status.failed');
           updateFeedbackClassList(feedback, 'danger');
+
+          sendButton.disabled = false;
         }
         if (value === 'sending') {
           feedback.textContent = i18next.t('status.sending');
           updateFeedbackClassList(feedback, 'neutral');
 
           sendButton.disabled = true;
+        }
+        if (value === 'updateFailed') {
+          feedback.textContent = i18next.t('status.updateFailed');
         }
         break;
       case 'posts':
