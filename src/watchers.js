@@ -1,8 +1,8 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 
-const renderFeeds = (posts, unwatchedState) => {
-  const { sources } = unwatchedState;
+const renderFeeds = (posts, state) => {
+  const { sources } = state;
 
   const html = sources.map(({ id, title }) => {
     const feedTitle = `<h2>${title}</h2>`;
@@ -24,24 +24,52 @@ const updateFeedbackClassList = (feedbackContainer, feedbackStatus) => {
       feedbackContainer.classList.add('text-danger');
       feedbackContainer.classList.remove('text-success');
       break;
+
     case 'success':
       feedbackContainer.classList.add('text-success');
       feedbackContainer.classList.remove('text-danger');
       break;
+
     case 'neutral':
       feedbackContainer.classList.remove('text-success', 'text-danger');
       break;
+
     default:
       break;
   }
 };
 
+const handleFormStatus = (status, elements) => {
+  const { input, feedback, sendButton } = elements;
+
+  switch (status) {
+    case 'submitted':
+      feedback.textContent = i18next.t('status.submitted');
+      updateFeedbackClassList(feedback, 'success');
+      input.value = '';
+      sendButton.disabled = false;
+      break;
+
+    case 'failed':
+      updateFeedbackClassList(feedback, 'danger');
+      sendButton.disabled = false;
+      break;
+
+    case 'sending':
+      feedback.textContent = i18next.t('status.sending');
+      updateFeedbackClassList(feedback, 'neutral');
+      sendButton.disabled = true;
+      break;
+
+    default:
+      throw new Error(`Unknown status: '${status}'!`);
+  }
+};
+
 export default (elements, state) => {
   const {
-    input, feedback, sendButton, feedsContainer,
+    input, feedback, feedsContainer,
   } = elements;
-
-  const unwatchedState = onChange.target(state);
 
   const watchedState = onChange(state, (path, value) => {
     switch (path) {
@@ -50,54 +78,37 @@ export default (elements, state) => {
           input.classList.remove('is-valid');
           input.classList.add('is-invalid');
 
-          feedback.textContent = i18next.t('validation.invalid');
-          updateFeedbackClassList(feedback, 'neutral');
-        }
-        if (value === true) {
+          updateFeedbackClassList(feedback, 'danger');
+        } else {
           input.classList.remove('is-invalid');
           input.classList.add('is-valid');
           feedback.textContent = '';
         }
         break;
       case 'form.status':
-        if (value === 'doubleAdded') {
-          feedback.textContent = i18next.t('status.doubleAdded');
-          updateFeedbackClassList(feedback, 'danger');
-
-          sendButton.disabled = false;
-        }
-        if (value === 'submitted') {
-          feedback.textContent = i18next.t('status.submitted');
-          updateFeedbackClassList(feedback, 'success');
-
-          input.value = '';
-          sendButton.disabled = false;
-        }
-        if (value === 'failed') {
-          feedback.textContent = i18next.t('status.failed');
-          updateFeedbackClassList(feedback, 'danger');
-
-          sendButton.disabled = false;
-        }
-        if (value === 'sending') {
-          feedback.textContent = i18next.t('status.sending');
-          updateFeedbackClassList(feedback, 'neutral');
-
-          sendButton.disabled = true;
-        }
-        if (value === 'updateFailed') {
-          feedback.textContent = i18next.t('status.updateFailed');
-        }
+        handleFormStatus(value, elements);
         break;
       case 'posts':
-        feedsContainer.innerHTML = renderFeeds(value, unwatchedState);
+        feedsContainer.innerHTML = renderFeeds(value, state);
         break;
       case 'sources':
+        break;
+      case 'form.validationError':
+        if (value === null) {
+          break;
+        }
+        feedback.innerHTML = i18next.t(`validation.error.${value}`);
+        break;
+      case 'processError':
+        if (value === null) {
+          break;
+        }
+        feedback.innerHTML = i18next.t(`status.error.${value}`);
         break;
       default:
         throw new Error(`Unknown state path: '${path}'!`);
     }
   });
 
-  return { watchedState, unwatchedState };
+  return watchedState;
 };

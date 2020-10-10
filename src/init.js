@@ -11,32 +11,15 @@ import resources from './locales';
 import watch from './watchers';
 import parse from './parse';
 
-const elements = {
-  form: document.querySelector('.rss-form'),
-  input: document.querySelector('input'),
-  feedback: document.querySelector('.feedback'),
-  sendButton: document.querySelector('button'),
-  feedsContainer: document.querySelector('.feeds'),
-};
-
 const getFullUrl = (rssUrl) => {
   const corsUrl = 'https://cors-anywhere.herokuapp.com/';
   return `${corsUrl}${rssUrl}`;
 };
 
-const isDoubleAdded = (sources, rssUrl) => {
-  const sameUrlSources = sources.filter((source) => source.rssUrl === rssUrl);
+const updatePosts = (state, elements) => {
+  const watchedState = watch(elements, state);
 
-  if (sameUrlSources.length !== 0) {
-    return true;
-  }
-  return false;
-};
-
-const updatePosts = (state) => {
-  const { watchedState, unwatchedState } = watch(elements, state);
-
-  const { sources, posts } = unwatchedState;
+  const { sources, posts } = watchedState;
 
   const requests = sources.map((source) => {
     const { id, rssUrl } = source;
@@ -50,33 +33,55 @@ const updatePosts = (state) => {
         const diff = differenceBy(newPosts, oldPosts, 'postLink');
         if (diff.length !== 0) {
           const diffPostsWithId = [...diff].map((post) => ({ id, ...post }));
-          watchedState.posts = [...diffPostsWithId, ...unwatchedState.posts];
+          watchedState.posts = [...diffPostsWithId, ...posts];
         }
       });
   });
 
   Promise.all(requests)
     .catch(() => {
-      watchedState.form.status = 'updateFailed';
     })
     .then(() => {
-      setTimeout(() => updatePosts(state), 5000);
+      setTimeout(() => updatePosts(state, elements), 5000);
     });
 };
 
 export default () => {
+  const elements = {
+    form: document.querySelector('.rss-form'),
+    input: document.querySelector('input'),
+    feedback: document.querySelector('.feedback'),
+    sendButton: document.querySelector('button'),
+    feedsContainer: document.querySelector('.feeds'),
+  };
+
   const state = {
     sources: [],
     posts: [],
     form: {
       status: 'filling',
       valid: true,
+      validationError: null,
     },
+    processError: null,
   };
 
-  const { watchedState, unwatchedState } = watch(elements, state);
+  const watchedState = watch(elements, state);
 
-  const schema = yup.string().url().required();
+  const schema = yup.string()
+    .url()
+    .required()
+    .test(
+      'unique',
+      'RSS is not unique',
+      (rssUrl) => {
+        const sameUrlSources = watchedState.sources.filter((source) => source.rssUrl === rssUrl);
+        if (sameUrlSources.length !== 0) {
+          return false;
+        }
+        return true;
+      },
+    );
 
   i18next.init({
     lng: 'en',
@@ -92,13 +97,9 @@ export default () => {
 
         schema.validate(rssUrl)
           .then(() => {
-            if (isDoubleAdded(unwatchedState.sources, rssUrl)) {
-              watchedState.form.status = 'doubleAdded';
-              return;
-            }
-
             watchedState.form.status = 'sending';
             watchedState.form.valid = true;
+            watchedState.form.validationError = null;
 
             const fullUrl = getFullUrl(rssUrl);
 
@@ -110,18 +111,26 @@ export default () => {
                 watchedState.sources.push({ id, title, rssUrl });
 
                 const postsWithId = [...posts].map((post) => ({ id, ...post }));
-                watchedState.posts = [...unwatchedState.posts, ...postsWithId];
+                watchedState.posts = [...watchedState.posts, ...postsWithId];
 
+                watchedState.processError = null;
                 watchedState.form.status = 'submitted';
               })
-              .catch(() => {
+              .catch((error) => {
                 watchedState.form.status = 'failed';
+
+                if (error.name === 'parseError') {
+                  watchedState.processError = 'parse';
+                } else {
+                  watchedState.processError = 'connection';
+                }
               });
           })
-          .catch(() => {
+          .catch((error) => {
             watchedState.form.valid = false;
+            watchedState.form.validationError = error.type;
           });
       });
-      setTimeout(() => updatePosts(state), 5000);
+      setTimeout(() => updatePosts(state, elements), 5000);
     });
 };
