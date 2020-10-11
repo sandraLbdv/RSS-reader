@@ -10,7 +10,7 @@ export default {
     },
     validation: {
       error: {
-        unique: 'This RSS has already been added',
+        notOneOf: 'This RSS has already been added',
         url: 'Please enter a valid URL',
         required: 'This field is required',
       },

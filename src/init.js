@@ -39,11 +39,15 @@ const updatePosts = (state, elements) => {
   });
 
   Promise.all(requests)
-    .catch(() => {
-    })
-    .then(() => {
+    .finally(() => {
       setTimeout(() => updatePosts(state, elements), 5000);
     });
+};
+
+const makeSchema = (sources) => {
+  const sourcesUrls = sources.map(({ rssUrl }) => rssUrl);
+
+  return yup.string().url().required().notOneOf(sourcesUrls);
 };
 
 export default () => {
@@ -68,21 +72,6 @@ export default () => {
 
   const watchedState = watch(elements, state);
 
-  const schema = yup.string()
-    .url()
-    .required()
-    .test(
-      'unique',
-      'RSS is not unique',
-      (rssUrl) => {
-        const sameUrlSources = watchedState.sources.filter((source) => source.rssUrl === rssUrl);
-        if (sameUrlSources.length !== 0) {
-          return false;
-        }
-        return true;
-      },
-    );
-
   i18next.init({
     lng: 'en',
     debug: true,
@@ -95,7 +84,7 @@ export default () => {
         const formData = new FormData(event.target);
         const rssUrl = formData.get('rssUrl');
 
-        schema.validate(rssUrl)
+        makeSchema(watchedState.sources).validate(rssUrl)
           .then(() => {
             watchedState.form.status = 'sending';
             watchedState.form.valid = true;

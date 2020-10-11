@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "RSS reader",
   "main": "index.js",
-  "scripts": {
-    "build": "webpack",
-    "server": "webpack-dev-server --open"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sandraLbdv/frontend-project-lvl3.git"
