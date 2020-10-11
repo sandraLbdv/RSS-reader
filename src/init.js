@@ -16,9 +16,7 @@ const getFullUrl = (rssUrl) => {
   return `${corsUrl}${rssUrl}`;
 };
 
-const updatePosts = (state, elements) => {
-  const watchedState = watch(elements, state);
-
+const updatePosts = (watchedState) => {
   const { sources, posts } = watchedState;
 
   const requests = sources.map((source) => {
@@ -33,6 +31,7 @@ const updatePosts = (state, elements) => {
         const diff = differenceBy(newPosts, oldPosts, 'postLink');
         if (diff.length !== 0) {
           const diffPostsWithId = [...diff].map((post) => ({ id, ...post }));
+          // eslint-disable-next-line no-param-reassign
           watchedState.posts = [...diffPostsWithId, ...posts];
         }
       });
@@ -40,7 +39,7 @@ const updatePosts = (state, elements) => {
 
   Promise.all(requests)
     .finally(() => {
-      setTimeout(() => updatePosts(state, elements), 5000);
+      setTimeout(() => updatePosts(watchedState), 5000);
     });
 };
 
@@ -107,12 +106,7 @@ export default () => {
               })
               .catch((error) => {
                 watchedState.form.status = 'failed';
-
-                if (error.name === 'parseError') {
-                  watchedState.processError = 'parse';
-                } else {
-                  watchedState.processError = 'connection';
-                }
+                watchedState.processError = error.message;
               });
           })
           .catch((error) => {
@@ -120,6 +114,6 @@ export default () => {
             watchedState.form.validationError = error.type;
           });
       });
-      setTimeout(() => updatePosts(state, elements), 5000);
+      setTimeout(() => updatePosts(watchedState), 5000);
     });
 };

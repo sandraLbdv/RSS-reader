@@ -4,10 +4,7 @@ export default (data) => {
 
   const parseError = dataParsed.querySelector('parsererror');
   if (parseError) {
-    const error = new Error('XML parse error');
-    error.name = 'parseError';
-
-    throw error;
+    throw new Error('XML parse error');
   }
 
   const title = dataParsed.querySelector('title').textContent;

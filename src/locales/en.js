@@ -4,8 +4,8 @@ export default {
       sending: 'Sending...',
       submitted: 'Rss has been loaded',
       error: {
-        parse: "This RSS can't be parsed",
-        connection: 'Connection problems. Try again',
+        'XML parse error': "This RSS can't be parsed",
+        'Network Error': 'Connection problems. Try again',
       },
     },
     validation: {
