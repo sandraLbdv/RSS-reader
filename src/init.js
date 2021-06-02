@@ -1,5 +1,5 @@
 import 'bootstrap';
-import './scss/app.scss';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 import * as yup from 'yup';
 import axios from 'axios';
