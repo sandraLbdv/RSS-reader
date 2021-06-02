@@ -12,7 +12,7 @@ import watch from './watchers';
 import parse from './parse';
 
 const getFullUrl = (rssUrl) => {
-  const corsUrl = 'https://cors-anywhere.herokuapp.com/';
+  const corsUrl = 'https://hexlet-allorigins.herokuapp.com/raw?url=';
   return `${corsUrl}${rssUrl}`;
 };
 
